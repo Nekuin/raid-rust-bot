@@ -1,5 +1,6 @@
 use serenity::builder::CreateEmbed;
-use serenity::model::id::{ChannelId, MessageId, UserId};
+use serenity::model::guild::PartialMember;
+use serenity::model::id::MessageId;
 use serenity::model::Timestamp;
 use serenity::prelude::*;
 use std::collections::HashMap;
@@ -9,12 +10,37 @@ use tokio::sync::RwLock;
 #[derive(Debug, Clone)]
 pub struct Raider {
     name: String,
-    id: UserId,
+    user_id: u64,
 }
 
 impl Raider {
     pub fn as_str(self) -> String {
         self.name
+    }
+
+    pub fn new(member: Option<PartialMember>) -> Self {
+        match member {
+            None => Self {
+                name: "Unknown".to_string(),
+                user_id: 0,
+            },
+            Some(member) => match member.user {
+                None => Self {
+                    name: "Unknown".to_string(),
+                    user_id: 0,
+                },
+                Some(user) => match member.nick {
+                    None => Self {
+                        name: user.name,
+                        user_id: *user.id.as_u64(),
+                    },
+                    Some(nick_name) => Self {
+                        name: nick_name,
+                        user_id: *user.id.as_u64(),
+                    },
+                },
+            },
+        }
     }
 }
 
@@ -33,6 +59,28 @@ impl Raid {
             location: location.to_string(),
             boss_name: boss_name.to_string(),
             raiders: vec![],
+        }
+    }
+
+    pub fn add_raider(&mut self, raider: Raider, count: u8) {
+        let mut i: u8 = 0;
+        while i < count {
+            self.raiders.push(raider.clone());
+            i += 1;
+        }
+
+        println!("raider thing {:#?}", self.raiders);
+    }
+
+    pub fn remove_raider(&mut self, user_id: u64, count: u8) {
+        let mut i: u8 = 0;
+        while i < count {
+            let indx = self
+                .raiders
+                .iter()
+                .position(|raider| raider.user_id == user_id);
+            self.raiders.remove(indx.unwrap());
+            i += 1;
         }
     }
 
@@ -60,6 +108,7 @@ impl Raid {
 #[derive(Debug, Clone)]
 pub struct RaidList {
     pub raids: HashMap<String, Raid>,
+    pub msg_to_location: HashMap<MessageId, String>,
 }
 
 impl TypeMapKey for RaidList {
@@ -70,10 +119,20 @@ impl RaidList {
     pub fn new() -> RaidList {
         RaidList {
             raids: HashMap::new(),
+            msg_to_location: HashMap::new(),
         }
     }
 
     pub fn add_raid(&mut self, raid_key: &String, raid: &Raid) {
         self.raids.insert(raid_key.to_string(), raid.clone());
+    }
+
+    pub fn update_raid(&mut self, raid_key: &String, raid: &Raid) {
+        self.raids.insert(raid_key.to_string(), raid.clone());
+    }
+
+    pub fn add_raid_by_message(&mut self, msg_id: &MessageId, raid_key: &String) {
+        self.msg_to_location
+            .insert(msg_id.clone(), raid_key.to_string());
     }
 }

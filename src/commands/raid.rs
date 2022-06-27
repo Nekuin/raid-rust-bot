@@ -88,8 +88,24 @@ pub async fn handle_raid_command(command: &ApplicationCommandInteraction, ctx: &
         .await;
 
     // log error
-    if let Err(why) = raid_message {
+    if let Err(why) = &raid_message {
         println!("Failed to send msg: {:?}", why)
+    } else if let Ok(rm) = raid_message {
+        // obtain a lock to our RaidList again from ctx.data
+        let raids_lock = {
+            let data_read = ctx.data.read().await;
+            data_read
+                .get::<RaidList>()
+                .expect("Expected RaidList in TypeMap")
+                .clone()
+        };
+        // use a scope so raid lock is released automatically
+        // after we exit the scope
+        {
+            // open lock to write mode
+            let mut raids = raids_lock.write().await;
+            raids.add_raid_by_message(&rm.id, &location)
+        }
     }
 
     // add a message to the slash command for the calling user
