@@ -227,7 +227,7 @@ impl EventHandler for Handler {
                 .create_application_command(|command| {
                     command
                         .name("raid")
-                        .description("Pakko ottaa")
+                        .description("Luo uuden raidin")
                         .create_option(|option| {
                             option
                                 .name("aika")
