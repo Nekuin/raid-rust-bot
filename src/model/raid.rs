@@ -62,16 +62,20 @@ impl Raid {
         }
     }
 
+    /**
+     * Adds count Raiders to this raid.
+     */
     pub fn add_raider(&mut self, raider: Raider, count: u8) {
         let mut i: u8 = 0;
         while i < count {
             self.raiders.push(raider.clone());
             i += 1;
         }
-
-        println!("raider thing {:#?}", self.raiders);
     }
 
+    /**
+     * Removes count Raiders from this raid
+     */
     pub fn remove_raider(&mut self, user_id: u64, count: u8) {
         let mut i: u8 = 0;
         while i < count {
@@ -88,7 +92,7 @@ impl Raid {
         let mut raider_string: String = String::from("");
         if self.raiders.len() > 0 {
             for raider in self.raiders {
-                raider_string.push_str(&raider.as_str())
+                raider_string.push_str(&(raider.as_str() + "\n"))
             }
         } else {
             raider_string.push_str("Ei ilmoittautuneita")

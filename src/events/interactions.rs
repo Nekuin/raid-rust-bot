@@ -26,11 +26,16 @@ fn is_bot(reaction: &Reaction) -> Option<bool> {
 fn emoji_name_from_string(string: String) -> String {
     let split = string.split(":");
     let parts = split.collect::<Vec<&str>>();
-    parts.get(0).unwrap().to_string()
+    match parts.get(0) {
+        None => "".to_string(),
+        Some(string) => String::from(*string),
+    }
 }
 
 fn count_from_emoji_name(emoji_name: String) -> u8 {
     let mut count: u8 = 1;
+    // in a "production version" this would
+    // probably be a map for each server using this bot.
     if emoji_name == "1_" {
         count = 1;
     } else if emoji_name == "2_" {
@@ -48,7 +53,6 @@ impl EventHandler for Handler {
             println!("Recieved command interaction: {:#?}", command);
             let content = match command.data.name.as_str() {
                 "ping" => "... Olen".to_string(),
-
                 "raid" => handle_raid_command(&command, &ctx).await,
                 _ => "not implemented :(".to_string(),
             };
@@ -79,7 +83,7 @@ impl EventHandler for Handler {
                     .expect("Expected RaidList in TypeMap")
                     .clone()
             };
-            // use a scope so raid lock is released automatically
+            // use a scope so write lock is released automatically
             // after we exit the scope
             {
                 // open lock to write mode
@@ -134,7 +138,6 @@ impl EventHandler for Handler {
     }
 
     async fn reaction_remove(&self, ctx: Context, reaction: Reaction) {
-        println!("Reaction remove call: {:?}", reaction);
         // check that the reaction adder is not a bot
         // default being bot to false, seems like reaction remove calls
         // only really have the user_id in the data.
@@ -149,7 +152,7 @@ impl EventHandler for Handler {
                     .expect("Expected RaidList in TypeMap")
                     .clone()
             };
-            // use a scope so raid lock is released automatically
+            // use a scope so write lock is released automatically
             // after we exit the scope
             {
                 // open lock to write mode
